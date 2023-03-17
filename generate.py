@@ -44,6 +44,7 @@ def main():
     parser.add_argument('-d','--dir',dest="dir_of_hf_w", type=str, help='dir folder of hf weights, e.g., xxx.bin')
     parser.add_argument('--out-to-txt',dest="out_to_txt", action='store_true', help='store output text to out_generation.txt')
     parser.add_argument('--load-in-8bit',dest="load_in_8bit", action='store_true', help='')
+    parser.add_argument('--interact',dest="interact", action='store_true', help='')
 
     args = parser.parse_args()
 
@@ -60,7 +61,7 @@ def main():
     # )
     model.eval()
     
-    if args.iteract:
+    if args.interact:
         print("For testing, please input your prompt:\n")
         instruction_from_terminal = " "
         while instruction_from_terminal!="exit":

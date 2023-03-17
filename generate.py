@@ -21,7 +21,7 @@ def evaluate(instruction, tokenizer, model, input=None, **kwargs):
         max_new_tokens=256,
     )
     s = generation_output.sequences[0]
-    output = tokenizer.decode(s)
+    output = tokenizer.decode(s) # this will return a fully-wholely description like "Below is an instruction....Response:..."
     return output.split("### Response:")[1].strip()
 
 
@@ -47,7 +47,7 @@ def main():
 
     args = parser.parse_args()
 
-    # build model and tokenizer
+    # building the model and tokenizer
     tokenizer = LLaMATokenizer.from_pretrained(args.dir_of_hf_w)
     model = LLaMAForCausalLM.from_pretrained(
         args.dir_of_hf_w,
@@ -60,35 +60,37 @@ def main():
     # )
     model.eval()
     
-    print("For testing, please input your prompt:\n")
-    instruction_from_terminal = " "
-    while instruction_from_terminal!="exit":
-        instruction_from_terminal = input("Your prompt: ")
-        pred = evaluate(instruction_from_terminal,tokenizer, model)
-        print("Response:", pred)
-        print()
-    # if type "exit" in terminal, will go on for some examples.
-    ctx = ""
-    for instruction in [
-        "Tell me about alpacas.",
-        "Tell me about the president of Mexico in 2019.",
-        "Tell me about the king of France in 2019.",
-        "List all Canadian provinces in alphabetical order.",
-        "Write a Python program that prints the first 10 Fibonacci numbers.",
-        "Write a program that prints the numbers from 1 to 100. But for multiples of three print 'Fizz' instead of the number and for the multiples of five print 'Buzz'. For numbers which are multiples of both three and five print 'FizzBuzz'.",
-        "Tell me five words that rhyme with 'shock'.",
-        "Translate the sentence 'I have no mouth but I must scream' into Spanish.",
-        "Count up from 1 to 500.",
-    ]:
-        print("Instruction:", instruction)
-        pred = evaluate(instruction, tokenizer, model)
-        ctx += f"Instruction: {instruction}\n" + f"Response: {pred}\n"
-        print("Response:", pred)
-        print()
+    if args.iteract:
+        print("For testing, please input your prompt:\n")
+        instruction_from_terminal = " "
+        while instruction_from_terminal!="exit":
+            instruction_from_terminal = input("Your prompt: ")
+            pred = evaluate(instruction_from_terminal,tokenizer, model)
+            print("Response:", pred)
+            print()
+        # if type "exit" in terminal, will go on for some examples.
+    else:
+        ctx = ""
+        for instruction in [
+            "Tell me about alpacas.",
+            "Tell me about the president of Mexico in 2019.",
+            "Tell me about the king of France in 2019.",
+            "List all Canadian provinces in alphabetical order.",
+            "Write a Python program that prints the first 10 Fibonacci numbers.",
+            "Write a program that prints the numbers from 1 to 100. But for multiples of three print 'Fizz' instead of the number and for the multiples of five print 'Buzz'. For numbers which are multiples of both three and five print 'FizzBuzz'.",
+            "Tell me five words that rhyme with 'shock'.",
+            "Translate the sentence 'I have no mouth but I must scream' into Spanish.",
+            "Count up from 1 to 500.",
+        ]:
+            print("Instruction:", instruction)
+            pred = evaluate(instruction, tokenizer, model)
+            ctx += f"Instruction: {instruction}\n" + f"Response: {pred}\n"
+            print("Response:", pred)
+            print()
 
-    if args.out_to_txt:
-        with open("./out_generation.txt",'w') as fp:
-            fp.write(ctx)
+        if args.out_to_txt:
+            with open("./out_generation.txt",'w') as fp:
+                fp.write(ctx)
 
 if __name__ == "__main__":
     # testing code for readme

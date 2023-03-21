@@ -1,9 +1,13 @@
 # How to build environment
-
+```bash
+conda env create -f environment.yaml
+conda install pytorch==1.12.1 torchvision==0.13.1 torchaudio==0.12.1 cudatoolkit=11.3 -c pytorch
+pip install -r requirements.txt
+```
 # How to run
 ```bash
 # for training
-torchrun --nproc_per_node=4 --master_port=889 train.py \
+torchrun --nproc_per_node=4 --master_port=8899 train.py \
     --model_name_or_path /data/liuyijiang/gpt-prompt/llama_weights_hf/llama-7b-hf \
     --data_path ./alpaca_data.json \
     --bf16 True \
@@ -26,7 +30,7 @@ torchrun --nproc_per_node=4 --master_port=889 train.py \
     --tf32 True
 
 # for inference 
-CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port=889 generate.py -d LOGs/output/ --out-to-txt
+CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port=889 generate.py -d LOGs/output/ -i
 
 ```
 

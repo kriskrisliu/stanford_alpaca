@@ -6,7 +6,7 @@ import argparse
 def evaluate(instruction, tokenizer, model, input=None, **kwargs):
     prompt = generate_prompt(instruction, input)
     inputs = tokenizer(prompt, return_tensors="pt")
-    input_ids = inputs["input_ids"].cuda()
+    input_ids = inputs["input_ids"].cuda() # these are integers encoded from words
     generation_config = GenerationConfig(
         temperature=0.1,
         top_p=0.75,
@@ -44,7 +44,7 @@ def main():
     parser.add_argument('-d','--dir',dest="dir_of_hf_w", type=str, help='dir folder of hf weights, e.g., xxx.bin')
     parser.add_argument('--out-to-txt',dest="out_to_txt", action='store_true', help='store output text to out_generation.txt')
     parser.add_argument('--load-in-8bit',dest="load_in_8bit", action='store_true', help='')
-    parser.add_argument('--interact',dest="interact", action='store_true', help='')
+    parser.add_argument('-i','--interact',dest="interact", action='store_true', help='')
 
     args = parser.parse_args()
 

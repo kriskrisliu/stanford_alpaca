@@ -24,27 +24,33 @@ from transformers import Trainer
 
 import utils
 
+import tqdm
+
 IGNORE_INDEX = -100
 DEFAULT_PAD_TOKEN = "[PAD]"
 DEFAULT_EOS_TOKEN = "</s>"
 DEFAULT_BOS_TOKEN = "</s>"
 DEFAULT_UNK_TOKEN = "</s>"
-PROMPT_DICT = {
-    "prompt_input": (
-        "Below is an instruction that describes a task, paired with an input that provides further context. "
-        "Write a response that appropriately completes the request.\n\n"
-        "### Instruction:\n{instruction}\n\n### Input:\n{input}\n\n### Response:"
-    ),
-    "prompt_no_input": (
-        "Below is an instruction that describes a task. "
-        "Write a response that appropriately completes the request.\n\n"
-        "### Instruction:\n{instruction}\n\n### Response:"
-    ),
-}
+# PROMPT_DICT = {
+#     "prompt_input": (
+#         "Below is an instruction that describes a task, paired with an input that provides further context. "
+#         "Write a response that appropriately completes the request.\n\n"
+#         "### Instruction:\n{instruction}\n\n### Input:\n{input}\n\n### Response:"
+#     ),
+#     "prompt_no_input": (
+#         "Below is an instruction that describes a task. "
+#         "Write a response that appropriately completes the request.\n\n"
+#         "### Instruction:\n{instruction}\n\n### Response:"
+#     ),
+# }
 
-PROMPT_DICT_NEW={
+PROMPT_DICT={
     "prompt":(
         "Below is a text imitation task. You will be given a text description and asked to rewrite it in a different style.\n\n"
+        "### Input:\n{input}\n\n### Output:"
+    ),
+    "prompt_extend":(
+        "Below is a text extending task. you will be given an incomplete text and requested to provide a continuation of said text in the !!!LAION-6plus-style!!!."
         "### Input:\n{input}\n\n### Output:"
     )
 }
@@ -57,6 +63,7 @@ class ModelArguments:
 @dataclass
 class DataArguments:
     data_path: str = field(default=None, metadata={"help": "Path to the training data."})
+    prompt_mode: Optional[str] = field(default="blip_pair")
 
 
 @dataclass
@@ -143,16 +150,22 @@ def preprocess(
 class SupervisedDataset(Dataset):
     """Dataset for supervised fine-tuning."""
 
-    def __init__(self, data_path: str, tokenizer: transformers.PreTrainedTokenizer):
+    def __init__(self, data_path: str, tokenizer: transformers.PreTrainedTokenizer,
+                prompt_mode: str):
         super(SupervisedDataset, self).__init__()
         logging.warning("Loading data...")
         list_data_dict = utils.jload(data_path)
 
         logging.warning("Formatting inputs...")
-        prompt_input, prompt_no_input = PROMPT_DICT["prompt_input"], PROMPT_DICT["prompt_no_input"]
+        logging.warning(f"Prompt mode = {prompt_mode} ")
+        if prompt_mode=="blip_pair":
+            prompt = PROMPT_DICT["prompt"]
+        elif prompt_mode=="continue":
+            prompt = PROMPT_DICT["prompt_extend"]
+        else:
+            raise NotImplementedError
         sources = [
-            prompt_input.format_map(example) if example.get("input", "") != "" else prompt_no_input.format_map(example)
-            for example in list_data_dict
+            prompt.format_map(example) for example in list_data_dict
         ]
         targets = [f"{example['output']}{tokenizer.eos_token}" for example in list_data_dict]
 
@@ -191,7 +204,7 @@ class DataCollatorForSupervisedDataset(object):
 def make_supervised_data_module(tokenizer: transformers.PreTrainedTokenizer, data_args) -> Dict:
     print("[func] make_supervised_data_module")
     """Make dataset and collator for supervised fine-tuning."""
-    train_dataset = SupervisedDataset(tokenizer=tokenizer, data_path=data_args.data_path)
+    train_dataset = SupervisedDataset(tokenizer=tokenizer, data_path=data_args.data_path, prompt_mode=data_args.prompt_mode)
     data_collator = DataCollatorForSupervisedDataset(tokenizer=tokenizer)
     return dict(train_dataset=train_dataset, eval_dataset=None, data_collator=data_collator)
 

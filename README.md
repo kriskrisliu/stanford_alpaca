@@ -240,7 +240,6 @@ We thank Yifan Mai for helpful support, and members of the Stanford NLP Group as
 
 # How to tcontinue
 1. Download LAION
-``
 2. From downloaded *.parquet file extract text, mask half part, build `tcontinue_data.json` dataset
 ```bash
 python prepare_tcontinue_dataset.py --indir <path/to/folder/contain/parquets> --outdir='./' --update_blip=False
@@ -254,6 +253,58 @@ torchrun --nproc_per_node=4 --master_port=889 train_prompt.py \
 --model_name_or_path ../llama_weights_hf/llama-7b-hf \
 --prompt_mode "continue" \
 --data_path ./tcontinue_data.json \
+--bf16 True \
+--output_dir $output_dir \
+--num_train_epochs 3 \
+--per_device_train_batch_size 2 \
+--per_device_eval_batch_size 2 \
+--gradient_accumulation_steps 8 \
+--evaluation_strategy "no" \
+--save_strategy "steps" \
+--save_steps 2000 \
+--save_total_limit 1 \
+--learning_rate 2e-5 \
+--weight_decay 0. \
+--warmup_ratio 0.03 \
+--lr_scheduler_type "cosine" \
+--logging_steps 1 \
+--fsdp "full_shard auto_wrap" \
+--fsdp_transformer_layer_cls_to_wrap 'LLaMADecoderLayer' \
+--tf32 True
+```
+
+# How to t2t
+1. Download LAION and urls
+```bash
+cd <LAION/6plus/data/>
+python download_images.py --fp <path/to/parquet> --outdir <path/to/folder>
+```
+2. Extract laion_text and generate blip_text
+```bash
+# extract laion_text
+cd <LAION/6plus/data/>
+python create_txt.py --fp <*.parquet> --outdir <where-imgs-saved>
+
+# generate blip text
+cd <BLIP>
+python easy_caption.py --image_path <where-imgs-saved>
+```
+3. Prepare t2t dataset
+```bash
+cd <alpaca>
+# will use clip to filter pairs
+python prepare_t2t_dataset.py --indir <where-imgs-saved1,where-imgs-saved2> --outdir='./' --update_blip=False
+# will produce l3 ~ l7 data.json, choose one to finetune
+```
+4. finetune
+```bash
+export CUDA_VISIBLE_DEVICES=0,1,2,3
+# for text continue training
+output_dir="LOGs/t2t_l4"
+torchrun --nproc_per_node=4 --master_port=889 train_prompt.py \
+--model_name_or_path ../llama_weights_hf/llama-7b-hf \
+--prompt_mode "blip_pair" \
+--data_path ./t2t_data_l4.json \
 --bf16 True \
 --output_dir $output_dir \
 --num_train_epochs 3 \

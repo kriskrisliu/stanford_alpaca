@@ -235,3 +235,41 @@ Naturally, you should also cite the original LLaMA paper [1] and the Self-Instru
 
 We thank Yizhong Wang for his help in explaining the data generation pipeline in Self-Instruct and providing the code for the parse analysis plot.
 We thank Yifan Mai for helpful support, and members of the Stanford NLP Group as well as the Center for Research on Foundation Models (CRFM) for their helpful feedback.
+
+
+
+# How to tcontinue
+1. Download LAION
+``
+2. From downloaded *.parquet file extract text, mask half part, build `tcontinue_data.json` dataset
+```bash
+python prepare_tcontinue_dataset.py --indir <path/to/folder/contain/parquets> --outdir='./' --update_blip=False
+```
+3. finetune
+```bash
+export CUDA_VISIBLE_DEVICES=0,1,2,3
+# for text continue training
+output_dir="LOGs/tcontinue"
+torchrun --nproc_per_node=4 --master_port=889 train_prompt.py \
+--model_name_or_path ../llama_weights_hf/llama-7b-hf \
+--prompt_mode "continue" \
+--data_path ./tcontinue_data.json \
+--bf16 True \
+--output_dir $output_dir \
+--num_train_epochs 3 \
+--per_device_train_batch_size 2 \
+--per_device_eval_batch_size 2 \
+--gradient_accumulation_steps 8 \
+--evaluation_strategy "no" \
+--save_strategy "steps" \
+--save_steps 2000 \
+--save_total_limit 1 \
+--learning_rate 2e-5 \
+--weight_decay 0. \
+--warmup_ratio 0.03 \
+--lr_scheduler_type "cosine" \
+--logging_steps 1 \
+--fsdp "full_shard auto_wrap" \
+--fsdp_transformer_layer_cls_to_wrap 'LLaMADecoderLayer' \
+--tf32 True
+```

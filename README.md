@@ -1,38 +1,3 @@
-# How to build environment
-```bash
-conda env create -f environment.yaml
-conda install pytorch==1.12.1 torchvision==0.13.1 torchaudio==0.12.1 cudatoolkit=11.3 -c pytorch
-pip install -r requirements.txt
-```
-# How to run
-```bash
-# for training
-torchrun --nproc_per_node=4 --master_port=8899 train.py \
-    --model_name_or_path /data/liuyijiang/gpt-prompt/llama_weights_hf/llama-7b-hf \
-    --data_path ./alpaca_data.json \
-    --bf16 True \
-    --output_dir LOGs/output \
-    --num_train_epochs 1 \
-    --per_device_train_batch_size 4 \
-    --per_device_eval_batch_size 4 \
-    --gradient_accumulation_steps 8 \
-    --evaluation_strategy "no" \
-    --save_strategy "steps" \
-    --save_steps 2000 \
-    --save_total_limit 1 \
-    --learning_rate 2e-5 \
-    --weight_decay 0. \
-    --warmup_ratio 0.03 \
-    --lr_scheduler_type "cosine" \
-    --logging_steps 1 \
-    --fsdp "full_shard auto_wrap" \
-    --fsdp_transformer_layer_cls_to_wrap 'LLaMADecoderLayer' \
-    --tf32 True
-
-# for inference 
-CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port=889 generate.py -d LOGs/output/ -i
-
-```
 
 
 <p align="center" width="100%">
@@ -237,6 +202,12 @@ We thank Yizhong Wang for his help in explaining the data generation pipeline in
 We thank Yifan Mai for helpful support, and members of the Stanford NLP Group as well as the Center for Research on Foundation Models (CRFM) for their helpful feedback.
 
 
+# How to build environment
+```bash
+conda env create -f environment.yaml
+conda install pytorch==1.12.1 torchvision==0.13.1 torchaudio==0.12.1 cudatoolkit=11.3 -c pytorch
+pip install -r requirements.txt
+```
 
 # How to tcontinue
 1. Download LAION
@@ -323,4 +294,10 @@ torchrun --nproc_per_node=4 --master_port=889 train_prompt.py \
 --fsdp "full_shard auto_wrap" \
 --fsdp_transformer_layer_cls_to_wrap 'LLaMADecoderLayer' \
 --tf32 True
+```
+
+# inference
+```bash
+# for inference 
+CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port=889 generate.py -d LOGs/output/ -i
 ```

@@ -301,3 +301,25 @@ torchrun --nproc_per_node=4 --master_port=889 train_prompt.py \
 # for inference 
 CUDA_VISIBLE_DEVICES=0 torchrun --nproc_per_node=1 --master_port=889 generate.py -d LOGs/output/ -i
 ```
+
+# generate images with stable diffusion
+```bash
+# SD v1
+# https://github.com/CompVis/stable-diffusion
+CUDA_VISIBLE_DEVICES=7 python scripts/txt2img.py --outdir outputs/dummy/gpt/ --plms --ckpt models/ldm/stable-diffusion-v1-4/model.ckpt --prompt "The scene depicts a young girl of about 10 years old, sitting in her bedroom surrounded by pink, princess-themed decorations. She is wearing a sparkly dress and a yellow bow in her hair and is looking lovingly at the pink toy cell phone with both hands. The phone has 'Princess Aurora' printed on it, and the girl's face shows excitement and joy."
+
+# SD v2
+# https://github.com/Stability-AI/stablediffusion
+python scripts/txt2img.py --ckpt ../v2-1_512-ema-pruned.ckpt --config configs/stable-diffusion/v2-inference.yaml --device cuda --n_iter 1 --n_samples 1 --prompt "a professional photograph of an astronaut riding a horse"
+```
+You can also generate images from a text file stored prompts, by using `--from_file` option.
+
+# evaluate FID
+```bash
+# install
+pip install torch-fidelity
+# evaluate
+fidelity --gpu 0 --isc --fid \
+--input1 <folder to generated images> \
+--input2 <folder to coco validation set>
+```
